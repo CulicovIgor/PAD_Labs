@@ -38,7 +38,6 @@ def run_receiver(loop):
             print("try")
             response = yield from get_message(loop)
             print('Received %s', response)
-            yield from asyncio.sleep(1)
         except KeyboardInterrupt:
             break
 
