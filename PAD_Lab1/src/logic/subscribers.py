@@ -9,6 +9,9 @@ def add_sub(topic, sub):
         topic_subs[topic].append(sub)
 
 
-def notify(topic):
+def notify(topic, msg):
     for sub in topic_subs[topic]:
-        sub
+        sub.write(msg)
+        yield from sub.drain()
+        sub.write_eof()
+        sub.close()

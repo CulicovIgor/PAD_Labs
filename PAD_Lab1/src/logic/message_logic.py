@@ -37,34 +37,35 @@ def dispatch_message(message):
 
 @asyncio.coroutine
 def handle_message(reader, writer):
-    data = yield from reader.read()
-    address = writer.get_extra_info('peername')
-
-    print('Recevied message from ', address)
-
-    try:
-        message = json.loads(data.decode('utf-8'))
-    except ValueError as e:
-        print('Invalid message received')
-        send_error(writer, str(e))
-        return
-
-    message_type = message.get('type')
-    print('Dispatching command ', message_type)
-    if message_type == 'send':
-        try:
-            response = yield from dispatch_message(message)
-            payload = json.dumps(response).encode('utf-8')
-            writer.write(payload)
-            yield from writer.drain()
-            writer.write_eof()
-        except ValueError as e:
-            print('Cannot process the message.')
-            send_error(writer, str(e))
-            writer.close()
+    if reader.at_eof():
+        print("No data")
     else:
-        topic = message.get('topic')
-        add_sub(topic, writer)
+        data = yield from reader.read()
+        address = writer.get_extra_info('peername')
+        print('Recevied message from ', address)
+        try:
+            message = json.loads(data.decode('utf-8'))
+        except ValueError as e:
+            print('Invalid message received')
+            send_error(writer, str(e))
+            return
+
+        message_type = message.get('type')
+        print('Dispatching command ', message_type)
+        if message_type == 'send':
+            try:
+                response = yield from dispatch_message(message)
+                payload = json.dumps(response).encode('utf-8')
+                writer.write(payload)
+                yield from writer.drain()
+                writer.write_eof()
+            except ValueError as e:
+                print('Cannot process the message.')
+                send_error(writer, str(e))
+                writer.close()
+        else:
+            topic = message.get('topic')
+            add_sub(topic, writer)
 
 
 @asyncio.coroutine

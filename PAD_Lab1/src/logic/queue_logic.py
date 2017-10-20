@@ -10,6 +10,9 @@ static_topics = {
 dynamic_topics = {}
 
 
+
+
+
 def save_queue():
     file = open('data.txt', "w")
     while not _MESSAGE_QUEUE.empty():

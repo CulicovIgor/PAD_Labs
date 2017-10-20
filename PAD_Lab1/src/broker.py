@@ -3,6 +3,7 @@ import asyncio
 from src.logic.queue_logic import save_queue
 from src.logic.queue_logic import load_queue
 from src.logic.message_logic import handle_message
+from src.service.send_service import MyThread
 
 
 def run_server(hostname='localhost', port=14141, loop=None):
