@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "items": {
+    "type": "object",
+    "properties": {
+      "age": {
+        "type": "number"
+      },
+      "name": {
+        "type": "string"
+      }
+    }
+  }
+}
