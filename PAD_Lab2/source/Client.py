@@ -20,29 +20,25 @@ s.send(MESSAGE.encode())
 data = s.recv(BUFFER_SIZE)
 #print(data)
 if df == "json":
-    with open('schema_json.json', 'r') as schema_file:
-        schema_to_check = schema_file.read()
-
-    schema = json.loads(schema_to_check)
-    jsonschema.validate(data.decode(), schema)
     try:
         with open('schema_json.json', 'r') as schema_file:
             schema_to_check = schema_file.read()
 
         schema = json.loads(schema_to_check)
-        jsonschema.validate(data.decode(), schema)
+        jsonschema.Draft4Validator.check_schema(schema)
+        jsonschema.validate(json.loads(data.decode()), schema, cls=jsonschema.Draft4Validator)
         print("Json valid")
     except ValueError:
         print("Json is not valid")
 else:
     if df == "xml":
-        with open('schema_xml.xml', 'r') as schema_file:
-            schema_to_check = schema_file.read()
-        schema_root = etree.parse(StringIO(schema_to_check))
-        schema = etree.XMLSchema(schema_root)
-        xmlparser = etree.XMLParser(schema=schema)
-        etree.fromstring(data, xmlparser)
         try:
+            with open('schema_xml.xml', 'r') as schema_file:
+                schema_to_check = schema_file.read()
+            schema_root = etree.parse(StringIO(schema_to_check))
+            schema = etree.XMLSchema(schema_root)
+            xmlparser = etree.XMLParser(schema=schema)
+            etree.fromstring(data, xmlparser)
             print("XML valid")
         except etree.XMLSchemaError:
             print("XML not valid")

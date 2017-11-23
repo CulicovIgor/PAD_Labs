@@ -1,5 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$schema": "http://json-schema.org/schema#",
+  "type": "array",
   "items": {
     "type": "object",
     "properties": {
@@ -9,6 +10,7 @@
       "name": {
         "type": "string"
       }
-    }
+    },
+    "required": ["name", "age"]
   }
 }

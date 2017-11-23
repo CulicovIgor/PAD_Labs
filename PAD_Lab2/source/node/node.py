@@ -8,7 +8,7 @@ from source.data.data_creator import Object
 names = ['Igor', 'Xenia', 'Ivan', 'Pavel', 'Iana', 'Aliona']
 
 diction = {
-    "<": lambda a, b: not a > b,
+    "<": lambda a, b: not a < b,
     ">": lambda a, b: not a > b,
     "<=": lambda a, b: not a >= b,
     ">=": lambda a, b: not a >= b,
@@ -21,7 +21,6 @@ class Node(threading.Thread):
         threading.Thread.__init__(self)
         self.name = name
         self.list_of_objects = []
-        self.return_list = []
         self.connected_ports = connected_ports
         self.port = port
         self.last_request = ''
@@ -41,7 +40,7 @@ class Node(threading.Thread):
             comp = int(expr_data[2])
         except ValueError:
             pass
-        for it in self.return_list:
+        for it in list_it:
             if type(comp) == int:
                 print("Is int")
                 field_name = it[expr_data[0]]
@@ -50,7 +49,7 @@ class Node(threading.Thread):
             if diction[symbol](field_name, comp):
                 remove_list.append(it)
         for it in remove_list:
-            self.return_list.remove(it)
+            list_it.remove(it)
 
     def create_startup_data(self, number):
         for x in range(0, number + 1):
@@ -59,7 +58,7 @@ class Node(threading.Thread):
             data.age = random.randrange(30)
             self.list_of_objects.append(data)
 
-    def get_conn_socket_data(self, ip, port, msg):
+    def get_conn_socket_data(self, ip, port, msg, return_list):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((ip, port))
         print(json.dumps(msg))
@@ -70,7 +69,7 @@ class Node(threading.Thread):
         else:
             data = json.loads(data.decode())
             for obj in data:
-                self.return_list.append(obj)
+                return_list.append(obj)
             s.close()
 
     def handle_tcp(self):
@@ -81,35 +80,40 @@ class Node(threading.Thread):
         while True:
             print('\nwaiting to receive message')
             conn, address = sock_tcp.accept()
-            data = conn.recv(1024)
-            print('received %s bytes from %s' % (len(data.decode()), address))
-            print(data.decode())
-            # check data received
-            request = json.loads(data.decode())
-            if self.last_request == request["uuid"]:
-                conn.send(''.encode())
-            else:
-                self.last_request = request["uuid"]
-                # connected nodes data collecting
-                if request["depth"] > 0:
-                    # multithreaded conn method
-                    list1 = []
-                    request["depth"] -= 1
-                    for port in self.connected_ports:
-                        thread = threading.Thread(name='get_conn_socket_data', target=self.get_conn_socket_data,
-                                                  args=('127.0.0.1', port, request))
-                        thread.start()
-                        list1.append(thread)
-                    for th in list1:
-                        th.join()
+            hm = threading.Thread(name='handle_tcp_request', target=self.handle_tcp_request, args=(conn, address))
+            hm.start()
 
-                print('sending acknowledgement to', address)
-                for obj in self.list_of_objects:
-                    self.return_list.append(json.loads(obj.to_json()))
-                self.filtering(self.return_list, request["filter"])
-                json_string = json.dumps(self.return_list)
-                conn.send(json_string.encode())
-                self.return_list = []
+    def handle_tcp_request(self, conn, address):
+        data = conn.recv(1024)
+        print('received %s bytes from %s' % (len(data.decode()), address))
+        print(data.decode())
+        # check data received
+        request = json.loads(data.decode())
+        if self.last_request == request["uuid"]:
+            conn.send(''.encode())
+        else:
+            self.last_request = request["uuid"]
+            # connected nodes data collecting
+            return_list = []
+            if request["depth"] > 0:
+                # multithreaded conn method
+                list1 = []
+                request["depth"] -= 1
+                for port in self.connected_ports:
+                    thread = threading.Thread(name='get_conn_socket_data', target=self.get_conn_socket_data,
+                                              args=('127.0.0.1', port, request, return_list))
+                    thread.start()
+                    list1.append(thread)
+                for th in list1:
+                    th.join()
+
+            print('sending acknowledgement to', address)
+            for obj in self.list_of_objects:
+                return_list.append(json.loads(obj.to_json()))
+            self.filtering(return_list, request["filter"])
+            json_string = json.dumps(return_list)
+            conn.send(json_string.encode())
+            return True
 
     def handle_multicast(self):
         print("Starting multicast " + self.name)
