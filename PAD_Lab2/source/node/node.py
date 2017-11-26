@@ -54,8 +54,8 @@ class Node(threading.Thread):
     def create_startup_data(self, number):
         for x in range(0, number + 1):
             data = Object()
-            data.name = random.choice(names)
             data.age = random.randrange(30)
+            data.name = random.choice(names)
             self.list_of_objects.append(data)
 
     def get_conn_socket_data(self, ip, port, msg, return_list):
